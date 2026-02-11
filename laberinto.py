@@ -108,6 +108,74 @@ def mover_raton(tablero, raton_pos, paredes):
     tablero[nuevo[0]][nuevo[1]] = raton
     return nuevo
 
+# verificacion de fin del juego
+
+def verificar_fin(raton_pos, gato_pos, queso_pos):
+
+    # ratón gana
+    if raton_pos == queso_pos:
+        print("El ratón consiguió el queso. GANASTE!")
+        return True
+
+
+    # gato gana
+    if raton_pos == gato_pos:
+        print("El gato atrapó al ratón. PERDISTE!")
+        return True
+
+
+    return False
+
+# Movimientos del Gato
+
+def mover_gato(tablero, gato_pos, raton_pos, queso_pos, paredes):
+
+    gx, gy = gato_pos
+    rx, ry = raton_pos
+
+
+    mejor_mov = gato_pos
+    mejor_dist = 9999
+
+
+    for dx, dy in movimientos.values():
+
+        nx = gx + dx
+        ny = gy + dy
+
+        nuevo = (nx, ny)
+
+
+        if not dentro_del_mapa(nuevo, paredes):
+            continue
+
+
+        # distancia Manhattan
+        dist = abs(rx - nx) + abs(ry - ny)
+
+
+        if dist < mejor_dist:
+            mejor_dist = dist
+            mejor_mov = nuevo
+
+ #  Restaurar la casilla vieja del gato
+    # si la posición vieja era donde estaba el queso, volver a poner Q
+    if gato_pos == queso_pos:
+        tablero[gx][gy] = queso
+    else:
+        tablero[gx][gy] = vacio
+
+    # 🔹 Dibujar el gato en la nueva posición
+    if mejor_mov == queso_pos:
+        tablero[mejor_mov[0]][mejor_mov[1]] = gato  # el gato pisa la Q
+        # el queso seguirá visible solo para la lógica, pero lo mostramos como gato
+    else:
+        tablero[mejor_mov[0]][mejor_mov[1]] = gato
+ 
+
+    return mejor_mov
+
+
 #programa principal
 
 def main():
@@ -118,6 +186,10 @@ def main():
     while True:
         dibujar_tablero(tablero)
         raton_pos = mover_raton(tablero, raton_pos, paredes)
+        gato_pos = mover_gato(tablero, gato_pos, raton_pos, queso_pos, paredes)
+
+        if verificar_fin(raton_pos, gato_pos, queso_pos):
+            break
 
 if __name__ == "__main__":
     main()
