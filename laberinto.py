@@ -1,61 +1,16 @@
+import random
+
 #tamaño del mapa
 
-tamaño = 7
+tamaño = 8
 
 #simbolos esto (esto es para no andar escribiendo "." todo el tiempo)
 
-vacio = "."
-pared = "#"
-raton = "R"
-gato = "G"
-queso = "Q"
-
-#creo el tablero vacio
-
-def crear_tablero():
-    tablero=[]
-
-    for i in range (tamaño):
-        fila = []
-
-        for j in range(tamaño):
-            fila.append(vacio)
-
-        tablero.append(fila)
-    return tablero
-
-def dibujar_tablero(tablero):
-    
-    print()
-
-    for fila in tablero:
-        print(" ".join(fila))
-    print()
-
-#colocamos personajes
-
-def colocar_elementos(tablero):
-
-    raton_pos = (6, 0)
-    gato_pos = (0, 6)
-    queso_pos = (6, 6)
-
-    paredes= {
-        (1,1), (1,2), (1,3),
-        (3,1), (3,2), (3,3),
-        (4,1), (5,1)
-    }
-
-#paredes
-    for x, y in paredes:
-        tablero[x][y] = pared
-
-#personajes
-    tablero[raton_pos[0]][raton_pos[1]] = raton
-    tablero[gato_pos[0]][gato_pos[1]] = gato
-    tablero[queso_pos[0]][queso_pos[1]] = queso
-
-    return raton_pos, gato_pos, queso_pos, paredes
+vacio = "⬛"
+pared = "⬜"
+raton = "🐭"
+gato = "🐱"
+queso = "🧀"
 
 #movimientos
 
@@ -66,23 +21,61 @@ movimientos = {
     "d":(0, 1)
 }
 
-#validacion de posiciones
+#creo el tablero vacio
+
+def crear_tablero():
+ return [[vacio for _ in range(tamaño)] for _ in range(tamaño)]
+
+def dibujar_tablero(tablero):
+    print()
+    for fila in tablero:
+        print(" ".join(fila))
+    print()
+
+# paredes aleatorias
+def generar_paredes_aleatorias(num_paredes=10):
+     paredes = set()
+
+     while len(paredes) < num_paredes:
+        x = random.randint(0, tamaño - 1)
+        y = random.randint(0, tamaño - 1)
+        # evitar colocar sobre raton, gato o queso
+        if (x, y) not in [(6,0), (0,6), (6,6)]:
+            paredes.add((x,y))
+     return paredes
+
+
+def colocar_elementos(tablero, aleatorio=True):
+    raton_pos = (6, 0)
+    gato_pos = (0, 6)
+    queso_pos = (6, 6)
+
+    paredes = generar_paredes_aleatorias() if aleatorio else {
+        (1,1), (1,2), (1,3),
+        (3,1), (3,2), (3,3),
+        (4,1), (5,1)
+    }
+
+    for x, y in paredes:
+        tablero[x][y] = pared
+
+    tablero[raton_pos[0]][raton_pos[1]] = raton
+    tablero[gato_pos[0]][gato_pos[1]] = gato
+    tablero[queso_pos[0]][queso_pos[1]] = queso
+
+    return raton_pos, gato_pos, queso_pos, paredes
+
+# movimientos posibles
 
 def dentro_del_mapa(pos, paredes):
     x, y = pos
-
-    if x < 0 or x >= tamaño:
-        return False
-    elif y < 0 or y >= tamaño:
-        return False
-    elif pos in paredes:
+    if x < 0 or x >= tamaño or y < 0 or y >= tamaño or pos in paredes:
         return False
     return True
 
-#mover al raton
+#mover al jugador
 
 def mover_jugador(tablero, pos, simbolo, paredes, queso_pos):
-
     tecla = input("> ").lower()
     if tecla not in movimientos:
         return pos
@@ -94,96 +87,9 @@ def mover_jugador(tablero, pos, simbolo, paredes, queso_pos):
         print("Movimiento invalido")
         return pos
 
-    # 1️⃣ Restaurar la casilla vieja si era queso
-    if pos == queso_pos:
-        tablero[pos[0]][pos[1]] = queso
-    else:
-        tablero[pos[0]][pos[1]] = vacio
-
-    # 2️⃣ Dibujar el jugador en la nueva posición
+    tablero[pos[0]][pos[1]] = queso if pos == queso_pos else vacio
     tablero[nuevo[0]][nuevo[1]] = simbolo
-
     return nuevo
-
-
-
-# verificacion de fin del juego
-
-def verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
-
-    # ratón llega al queso
-    if raton_pos == queso_pos:
-
-        if jugador == "raton":
-            print("GANASTE! 🐭 Conseguiste el queso 🧀")
-        else:
-            print("PERDISTE 😿 El ratón ganó")
-
-        return True
-
-
-    # gato atrapa al ratón
-    if raton_pos == gato_pos:
-
-        if jugador == "gato":
-            print("GANASTE! 🐱 Atrapaste al ratón")
-        else:
-            print("PERDISTE 💀 El gato te atrapó")
-
-        return True
-
-
-    return False
-
-
-# Movimientos del Gato
-
-def mover_gato(tablero, gato_pos, raton_pos, queso_pos, paredes):
-
-    gx, gy = gato_pos
-    rx, ry = raton_pos
-
-
-    mejor_mov = gato_pos
-    mejor_dist = 9999
-
-
-    for dx, dy in movimientos.values():
-
-        nx = gx + dx
-        ny = gy + dy
-
-        nuevo = (nx, ny)
-
-
-        if not dentro_del_mapa(nuevo, paredes):
-            continue
-
-
-        # distancia Manhattan
-        dist = abs(rx - nx) + abs(ry - ny)
-
-
-        if dist < mejor_dist:
-            mejor_dist = dist
-            mejor_mov = nuevo
-
- #  Restaurar la casilla vieja del gato
-    # si la posición vieja era donde estaba el queso, volver a poner Q
-    if gato_pos == queso_pos:
-        tablero[gx][gy] = queso
-    else:
-        tablero[gx][gy] = vacio
-
-    #  Dibujar el gato en la nueva posición
-    if mejor_mov == queso_pos:
-        tablero[mejor_mov[0]][mejor_mov[1]] = gato  # el gato pisa la Q
-        # el queso seguirá visible solo para la lógica, pero lo mostramos como gato
-    else:
-        tablero[mejor_mov[0]][mejor_mov[1]] = gato
- 
-
-    return mejor_mov
 
 #selector de personajes
 
@@ -204,96 +110,149 @@ def elegir_personaje():
         print("Opcion invalida, sos raton por defecto")
         return "raton"
 
-# Logica para que el raton se mueva
+# Movimientos del contrincante
 
-def mover_raton_ia(tablero, raton_pos, gato_pos, paredes, queso_pos):
-    rx, ry = raton_pos
-    mejor_pos = raton_pos
-    mejor_puntaje = -9999  # queremos maximizar
+def mover_ia_minimax(jugador, raton_pos, gato_pos, queso_pos, paredes, profundidad=3):
+    mejor_valor = -9999
+    mejor_mov = gato_pos if jugador == "gato" else raton_pos
+    pos_actual = gato_pos if jugador == "gato" else raton_pos
+
+    for mov in generar_movimientos(pos_actual, paredes):
+        if jugador == "gato":
+            valor = minimax(raton_pos, mov, queso_pos, paredes, profundidad, False, jugador)
+        else:
+            valor = minimax(mov, gato_pos, queso_pos, paredes, profundidad, False, jugador)
+        if valor > mejor_valor:
+            mejor_valor = valor
+            mejor_mov = mov
+
+    return mejor_mov
+
+
+#generar movimientos (Minimax)
+
+def generar_movimientos(pos, paredes):
+    posibles = []
 
     for dx, dy in movimientos.values():
-        nx, ny = rx + dx, ry + dy
+        nx = pos[0] + dx
+        ny = pos[1] + dy
         nuevo = (nx, ny)
 
-        # validar posición
-        if not dentro_del_mapa(nuevo, paredes):
-            continue
+        if dentro_del_mapa(nuevo, paredes):
+            posibles.append(nuevo)
 
-        # distancia al gato (queremos alejarlo)
-        dist_gato = abs(nx - gato_pos[0]) + abs(ny - gato_pos[1])
+    return posibles
 
-        # distancia al queso (queremos acercarnos)
-        dist_queso = abs(nx - queso_pos[0]) + abs(ny - queso_pos[1])
 
-        # puntuación combinada: alejarse del gato y acercarse al queso
-        puntaje = dist_gato - dist_queso  # mientras más grande, mejor
+def evaluar_estado(raton_pos, gato_pos, queso_pos):
 
-        if puntaje > mejor_puntaje:
-            mejor_puntaje = puntaje
-            mejor_pos = nuevo
+    # gato gana
+    if raton_pos == gato_pos:
+        return 100
 
-    # limpiar la casilla vieja
+    # ratón gana
     if raton_pos == queso_pos:
-        tablero[rx][ry] = queso
-    else:
-        tablero[rx][ry] = vacio
+        return -100
 
-    # colocar ratón en nueva posición
-    tablero[mejor_pos[0]][mejor_pos[1]] = raton
+    # heurística: distancias
+    dist_gato = abs(raton_pos[0] - gato_pos[0]) + abs(raton_pos[1] - gato_pos[1])
+    dist_queso = abs(raton_pos[0] - queso_pos[0]) + abs(raton_pos[1] - queso_pos[1])
 
-    return mejor_pos
+    return dist_gato - dist_queso
+
+#minimax
+
+def minimax(raton_pos, gato_pos, queso_pos, paredes, profundidad, es_max, jugador):
+    # Terminales
+    if raton_pos == gato_pos:  # gato gana
+        return 100 if jugador == "gato" else -100
+    if raton_pos == queso_pos:  # ratón gana
+        return 100 if jugador == "raton" else -100
+    if profundidad == 0:
+        # heurística
+        dist_gato = abs(raton_pos[0] - gato_pos[0]) + abs(raton_pos[1] - gato_pos[1])
+        dist_queso = abs(raton_pos[0] - queso_pos[0]) + abs(raton_pos[1] - queso_pos[1])
+        if jugador == "raton":
+            return -dist_gato - dist_queso  # ratón quiere acercarse al queso y alejarse del gato
+        else:
+            return dist_gato - dist_queso  # gato quiere acercarse al ratón
+       
+    if es_max:  # turno del jugador actual
+        mejor = -9999
+        pos_actual = gato_pos if jugador == "gato" else raton_pos
+        for mov in generar_movimientos(pos_actual, paredes):
+            if jugador == "gato":
+                valor = minimax(raton_pos, mov, queso_pos, paredes, profundidad-1, False, jugador)
+            else:
+                valor = minimax(mov, gato_pos, queso_pos, paredes, profundidad-1, False, jugador)
+            mejor = max(mejor, valor)
+        return mejor
+    else:  # turno del oponente
+        mejor = 9999
+        if jugador == "gato":
+            for mov in generar_movimientos(pos_actual, paredes):
+                valor = minimax(mov, gato_pos, queso_pos, paredes, profundidad-1, True, jugador)
+            else:
+                valor = minimax(raton_pos, mov, queso_pos, paredes, profundidad-1, True, jugador)
+            mejor = min(mejor, valor)
+        return mejor
+
+
+#Funcion controladora del minimax
+
+# verificacion de fin del juego
+
+def verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
+    if raton_pos == queso_pos:
+        print("GANASTE! 🐭 Conseguiste el queso 🧀" if jugador=="raton" else "PERDISTE 😿 El ratón ganó")
+        return True
+    if raton_pos == gato_pos:
+        print("GANASTE! 🐱 Atrapaste al ratón" if jugador=="gato" else "PERDISTE 💀 El gato te atrapó")
+        return True
+    return False
 
 
 #programa principal
 
 def main():
-
     tablero = crear_tablero()
     raton_pos, gato_pos, queso_pos, paredes = colocar_elementos(tablero)
     jugador = elegir_personaje()
 
     while True:
-
         dibujar_tablero(tablero)
 
         if jugador == "raton":
+            # Turno del jugador (ratón)
+            raton_pos = mover_jugador(tablero, raton_pos, raton, paredes, queso_pos)
+            if verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
+                dibujar_tablero(tablero)
+                break
 
-            # mueve el ratón (jugador)
-            raton_pos = mover_jugador(
-                tablero,
-                raton_pos,
-                raton,
-                paredes,
-                queso_pos
-            )
-
-            # mueve el gato (IA)
-            gato_pos = mover_gato(
-                tablero,
-                gato_pos,
-                raton_pos,
-                queso_pos,
-                paredes
-            )
+            # Turno del gato (IA con Minimax)
+            gato_pos = mover_ia_minimax("gato", raton_pos, gato_pos, queso_pos, paredes, profundidad=3)
+            tablero[gato_pos[0]][gato_pos[1]] = gato
+            tablero[raton_pos[0]][raton_pos[1]] = raton  # para mantener símbolos correctos
+            if verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
+                dibujar_tablero(tablero)
+                break
 
         else:
+            # Turno del jugador (gato)
+            gato_pos = mover_jugador(tablero, gato_pos, gato, paredes, queso_pos)
+            if verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
+                dibujar_tablero(tablero)
+                break
 
-            # mueve el gato (jugador)
-            gato_pos = mover_jugador(
-                tablero,
-                gato_pos,
-                gato,
-                paredes,
-                queso_pos
-            )
+            # Turno del ratón (IA con Minimax)
+            raton_pos = mover_ia_minimax("raton", raton_pos, gato_pos, queso_pos, paredes, profundidad=3)
+            tablero[raton_pos[0]][raton_pos[1]] = raton
+            tablero[gato_pos[0]][gato_pos[1]] = gato
+            if verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
+                dibujar_tablero(tablero)
+                break
 
-            # IA del ratón intenta escapar y llegar al queso
-            raton_pos = mover_raton_ia(tablero, raton_pos, gato_pos, paredes, queso_pos)
-
-
-        if verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
-            dibujar_tablero(tablero)
-            break
 
 
 if __name__ == "__main__":
