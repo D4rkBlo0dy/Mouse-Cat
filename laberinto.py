@@ -209,6 +209,17 @@ def verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
         return True
     return False
 
+def actualizar_tablero(tablero, pos_vieja, pos_nueva, jugador_simbolo, queso_pos):
+    # Restaurar la casilla vieja
+    x_old, y_old = pos_vieja
+    if (x_old, y_old) == queso_pos:
+        tablero[x_old][y_old] = queso
+    else:
+        tablero[x_old][y_old] = vacio
+
+    # Colocar al jugador en la nueva posición
+    x_new, y_new = pos_nueva
+    tablero[x_new][y_new] = jugador_simbolo
 
 #programa principal
 
@@ -222,22 +233,18 @@ def main():
 
         if jugador == "raton":
             # Turno del jugador (ratón)
+            old_pos_raton = raton_pos
             raton_pos = mover_jugador(tablero, raton_pos, raton, paredes, queso_pos)
+            actualizar_tablero(tablero, old_pos_raton, raton_pos, raton, queso_pos)
+
             if verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
                 dibujar_tablero(tablero)
                 break
 
             # Turno del gato (IA)
-            old_x, old_y = gato_pos
+            old_pos_gato = gato_pos
             gato_pos = mover_ia_minimax("gato", raton_pos, gato_pos, queso_pos, paredes, profundidad=3)
-            new_x, new_y = gato_pos
-
-            # Limpiar posición vieja
-            tablero[old_x][old_y] = vacio
-            # Colocar nueva
-            tablero[new_x][new_y] = gato
-            # Mantener ratón visible
-            tablero[raton_pos[0]][raton_pos[1]] = raton
+            actualizar_tablero(tablero, old_pos_gato, gato_pos, gato, queso_pos)
 
             if verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
                 dibujar_tablero(tablero)
@@ -245,27 +252,22 @@ def main():
 
         else:
             # Turno del jugador (gato)
+            old_pos_gato = gato_pos
             gato_pos = mover_jugador(tablero, gato_pos, gato, paredes, queso_pos)
+            actualizar_tablero(tablero, old_pos_gato, gato_pos, gato, queso_pos)
+
             if verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
                 dibujar_tablero(tablero)
                 break
 
             # Turno del ratón (IA)
-            old_x, old_y = raton_pos
+            old_pos_raton = raton_pos
             raton_pos = mover_ia_minimax("raton", raton_pos, gato_pos, queso_pos, paredes, profundidad=3)
-            new_x, new_y = raton_pos
-
-            # Limpiar posición vieja
-            tablero[old_x][old_y] = vacio
-            # Colocar nueva
-            tablero[new_x][new_y] = raton
-            # Mantener gato visible
-            tablero[gato_pos[0]][gato_pos[1]] = gato
+            actualizar_tablero(tablero, old_pos_raton, raton_pos, raton, queso_pos)
 
             if verificar_fin(raton_pos, gato_pos, queso_pos, jugador):
                 dibujar_tablero(tablero)
                 break
-
 
 if __name__ == "__main__":
     main()
